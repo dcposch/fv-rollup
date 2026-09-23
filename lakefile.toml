@@ -1,0 +1,21 @@
+name = "fv-rollup"
+version = "0.1.0"
+defaultTargets = ["semantics", "invariants", "proofs"]
+
+[[lean_lib]]
+name = "semantics"
+globs = ["semantics.+"]
+
+[[lean_lib]]
+name = "invariants"
+globs = ["invariants.+"]
+
+[[lean_lib]]
+name = "proofs"
+globs = ["proofs.+"]
+weakLeanArgs = ["-j1"]
+
+[[require]]
+name = "EquiVM"
+git = "https://github.com/argotorg/EquiVM.git"
+rev = "4b9fddcb353c69e740f7adf3eec1d5338d7073e4"

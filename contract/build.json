@@ -1,0 +1,103 @@
+{
+  "compiler": "0.8.26+commit.8a97fa7a",
+  "creation_bytes": 1594,
+  "creation_sha256": "f779ac2da09b041c1fe4852df28be1aa1df02d1549ec364dec44a286a413c980",
+  "runtime_bytes": 1429,
+  "runtime_sha256": "aaea416d10848764efe73da6491a2b11b26be6b9bb07a6c0d41beaf8bdc018c2",
+  "selectors": {
+    "backing()": "c9503fe2",
+    "batchNumber()": "ba873065",
+    "deposit(address)": "f340fa01",
+    "executeBatch(uint256,bytes32,bytes32,address,uint256,address,uint256)": "88af9950",
+    "pendingDeposits(address)": "eb3349b9",
+    "pendingWithdrawals(address)": "f3f43703",
+    "sequencer()": "5c1bba38",
+    "stateRoot()": "9588eca2",
+    "withdrawPendingBalance(address,uint256)": "bb3ef682"
+  },
+  "settings": {
+    "compilationTarget": {
+      "contract/Rollup.sol": "Rollup"
+    },
+    "evmVersion": "cancun",
+    "libraries": {},
+    "metadata": {
+      "appendCBOR": false,
+      "bytecodeHash": "none"
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": []
+  },
+  "source_sha256": "b57c6ea661eb7d5efe4e81a434606ed4f84a98086c25bbb1e1130a35c36e181e",
+  "storage": [
+    {
+      "label": "sequencer",
+      "offset": 0,
+      "slot": "0",
+      "type": "t_address"
+    },
+    {
+      "label": "stateRoot",
+      "offset": 0,
+      "slot": "1",
+      "type": "t_bytes32"
+    },
+    {
+      "label": "batchNumber",
+      "offset": 0,
+      "slot": "2",
+      "type": "t_uint256"
+    },
+    {
+      "label": "backing",
+      "offset": 0,
+      "slot": "3",
+      "type": "t_uint256"
+    },
+    {
+      "label": "pendingDeposits",
+      "offset": 0,
+      "slot": "4",
+      "type": "t_mapping(t_address,t_uint256)"
+    },
+    {
+      "label": "pendingWithdrawals",
+      "offset": 0,
+      "slot": "5",
+      "type": "t_mapping(t_address,t_uint256)"
+    },
+    {
+      "label": "entered",
+      "offset": 0,
+      "slot": "6",
+      "type": "t_uint256"
+    }
+  ],
+  "storage_types": {
+    "t_address": {
+      "encoding": "inplace",
+      "label": "address",
+      "numberOfBytes": "20"
+    },
+    "t_bytes32": {
+      "encoding": "inplace",
+      "label": "bytes32",
+      "numberOfBytes": "32"
+    },
+    "t_mapping(t_address,t_uint256)": {
+      "encoding": "mapping",
+      "key": "t_address",
+      "label": "mapping(address => uint256)",
+      "numberOfBytes": "32",
+      "value": "t_uint256"
+    },
+    "t_uint256": {
+      "encoding": "inplace",
+      "label": "uint256",
+      "numberOfBytes": "32"
+    }
+  }
+}
