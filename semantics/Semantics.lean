@@ -91,7 +91,7 @@ def contract : ContractDecl := solidity% contract Rollup {
 def uint256 : IntType := .uint ⟨256, by decide⟩
 
 def mapSlot (owner : KeyValue) (slot : Ethereum.UInt256) : Ethereum.UInt256 :=
-  Ethereum.uInt256OfByteArray (ffi.KEC ((keyValueToWord owner).toByteArray ++ slot.toByteArray))
+  Ethereum.uInt256OfByteArray (Ethereum.KEC ((keyValueToWord owner).toByteArray ++ slot.toByteArray))
 
 def wordLoc (slot : Ethereum.UInt256) : StorageLoc :=
   { slot := slot, offset := 0, size := 32, hbound := by decide, type := .int uint256 }

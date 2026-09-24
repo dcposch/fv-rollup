@@ -9,6 +9,12 @@ optimizer_runs = 200
 via_ir = false
 bytecode_hash = "none"
 cbor_metadata = false
+# The donation test uses SELFDESTRUCT to force an ETH transfer.
+ignored_error_codes = [5159]
+
+[lint]
+# Keep the modifier inline to preserve the verified bytecode.
+exclude_lints = ["unwrapped-modifier-logic"]
 
 [fuzz]
 runs = 512

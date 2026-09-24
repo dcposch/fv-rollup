@@ -49,7 +49,6 @@ lake exe cache get
 python3 scripts/check.py
 ```
 
-The script installs and checks the semantic model patches, then checks compiler output, tests, Lean builds, and proof axioms.
+The script checks pinned dependencies, compiler output, tests, Lean builds, and proof axioms. GitHub CI runs the same check on pushes and pull requests.
 
 The eight invariants are proved for the pinned EVM model, from deployment through complete transactions and active withdrawal callbacks. Proofs use only Lean's standard logical axioms. [proofs/Completion.lean](proofs/Completion.lean) enforces the final theorem types.
-

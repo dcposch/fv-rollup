@@ -53,7 +53,7 @@ private theorem twoWordHashMem_read0_64_any (key slot : UInt256) (mem : ByteArra
 
 private theorem twoWordHashMem_solcMappingSlot_any (baseSlot key : UInt256) (mem : ByteArray) :
     UInt256.ofNat (fromByteArrayBigEndian
-        (ffi.KEC ((twoWordHashMem key baseSlot mem).readWithPadding 0 64))) =
+        (Ethereum.KEC ((twoWordHashMem key baseSlot mem).readWithPadding 0 64))) =
       solcMappingSlot baseSlot key := by
   rw [twoWordHashMem_read0_64_any]
   unfold solcMappingSlot

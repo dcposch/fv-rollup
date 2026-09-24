@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate a kernel-checked Keccak certificate for one input block."""
+"""Generate a kernel-checked upstream Keccak certificate for one input block."""
 import argparse
 import json
 from pathlib import Path
@@ -8,22 +8,41 @@ import subprocess
 import tempfile
 
 ROOT = Path(__file__).resolve().parent.parent
+ROUND_CONSTANTS = (
+    0x0000000000000001, 0x0000000000008082, 0x800000000000808A,
+    0x8000000080008000, 0x000000000000808B, 0x0000000080000001,
+    0x8000000080008081, 0x8000000000008009, 0x000000000000008A,
+    0x0000000000000088, 0x0000000080008009, 0x000000008000000A,
+    0x000000008000808B, 0x800000000000008B, 0x8000000000008089,
+    0x8000000000008003, 0x8000000000008002, 0x8000000000000080,
+    0x000000000000800A, 0x800000008000000A, 0x8000000080008081,
+    0x8000000000008080, 0x0000000080000001, 0x8000000080008008,
+)
 
 
 def array(values):
     return "#[" + ", ".join(map(str, values)) + "]"
 
 
+def vector(values):
+    return f"(⟨{array(values)}, by decide⟩ : State)"
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("name")
     parser.add_argument("output", type=Path)
+    parser.add_argument("--namespace", default="Rollup.EVM.HashCertificates")
+    parser.add_argument("--alias")
     source = parser.add_mutually_exclusive_group(required=True)
     source.add_argument("--text")
     source.add_argument("--hex")
     args = parser.parse_args()
     if not re.fullmatch(r"[a-z][a-z0-9_]*", args.name):
         parser.error("Use a lowercase Lean identifier for the name.")
+    for identifier in [args.namespace, args.alias]:
+        if identifier is not None and not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*", identifier):
+            parser.error("Use a qualified Lean identifier for namespaces and aliases.")
     if args.output.exists():
         parser.error("The output file already exists.")
     if args.text is not None:
@@ -37,24 +56,22 @@ def main():
     if len(payload) >= 136:
         parser.error("The input must contain fewer than 136 bytes.")
 
-    program = f'''import Ethereum.LeanCrypto.Keccak256
+    padded = bytearray(payload) + bytearray(136 - len(payload))
+    padded[len(payload)] = 0x01
+    padded[-1] |= 0x80
+    initial = [int.from_bytes(padded[i:i + 8], "little") for i in range(0, 136, 8)] + [0] * 8
+    program = f'''import Ethereum.SpongeHash.Keccak256
 import Lean
-open LeanCrypto.HashFunctions
+open Ethereum.Keccak256
 #eval show IO Unit from do
   let input : ByteArray := {expression}
-  let padded := byteArrayOfSHA3SR (paddingKeccak 136 input)
-  let words := Absorb.toBlocks padded
-  let initial := (Array.replicate 25 (0 : UInt64)).mapIdx fun z _ =>
-    if z / 5 + 5 * (z % 5) < 17 then words[z / 5 + 5 * (z % 5)]! else 0
-  let mut states : Array (Array UInt64) := #[initial]
-  let mut state : Array UInt64 := initial
-  for r in [:24] do
-    state := keccak_round r state
-    states := states.push state
-  IO.println (Lean.Json.arr #[Lean.toJson (padded.toList.map UInt8.toNat),
-    Lean.toJson (words.map UInt64.toNat),
-    Lean.toJson (states.map (fun s => s.map UInt64.toNat)),
-    Lean.toJson ((keccak256 input).toList.map UInt8.toNat)]).compress
+  let mut state : State := {vector(initial)}
+  let mut states := #[state.toArray.map UInt64.toNat]
+  for rc in ({array(ROUND_CONSTANTS)} : Array UInt64) do
+    state := round state rc
+    states := states.push (state.toArray.map UInt64.toNat)
+  IO.println (Lean.Json.arr #[Lean.toJson states,
+    Lean.toJson ((Ethereum.Keccak256.hash input).toList.map UInt8.toNat)]).compress
 '''
     with tempfile.TemporaryDirectory() as directory:
         temporary = Path(directory).resolve()
@@ -65,44 +82,42 @@ open LeanCrypto.HashFunctions
             text=True, stdout=subprocess.PIPE)
         if result.returncode:
             raise SystemExit(result.stdout)
-        output = result.stdout
-    padded, words, states, digest = json.loads(output)
+        states, digest = json.loads(result.stdout)
     reference = subprocess.check_output(
         ["cast", "keccak", "0x" + payload.hex()], cwd=ROOT, text=True).strip()
     if bytes(digest).hex() != reference.removeprefix("0x"):
-        raise SystemExit("The Lean model and cast hashes differ.")
+        raise SystemExit("The upstream Lean model and cast hashes differ.")
 
     name = args.name
-    lines = ["import Ethereum.FFI.ffi", "import proofs.HashComputation", "",
+    lines = ["import Ethereum.SpongeHash.Keccak256", "",
              "set_option maxRecDepth 100000", "set_option maxHeartbeats 10000000", "",
-             "open LeanCrypto.HashFunctions", "namespace Rollup.EVM.HashCertificates", ""]
-    lines += [f"private theorem {name}_padding :",
-              f"    byteArrayOfSHA3SR (paddingKeccak 136 {expression}) = ⟨{array(padded)}⟩ := by",
-              "  decide +kernel", "",
-              f"private theorem {name}_blocks :",
-              f"    Absorb.toBlocks (byteArrayOfSHA3SR (paddingKeccak 136 {expression})) =",
-              f"      {array(words)} := by", f"  rw [{name}_padding]", "  keccak_cbv", ""]
-    for r in range(24):
+             "open Ethereum.Keccak256", f"namespace {args.namespace}", ""]
+    for r, rc in enumerate(ROUND_CONSTANTS):
         lines += [f"private theorem {name}_round_{r} :",
-                  f"    keccak_round {r} {array(states[r])} =", f"      {array(states[r + 1])} := by",
-                  "  decide +kernel", ""]
-    nested = array(states[0])
-    for r in range(24):
-        nested = f"keccak_round {r} ({nested})"
+                  f"    round {vector(states[r])} {rc} =",
+                  f"      {vector(states[r + 1])} := by", "  decide +kernel", ""]
+    nested = vector(states[0])
+    for rc in ROUND_CONSTANTS:
+        nested = f"round ({nested}) {rc}"
     lines += [f"private theorem {name}_permutation :",
-              f"    keccakF {array(states[0])} = {array(states[-1])} := by",
+              f"    permute {vector(states[0])} = {vector(states[-1])} := by",
               f"  change {nested} = _",
               "  rw [" + ", ".join(f"{name}_round_{r}" for r in range(24)) + "]", "",
-              f"theorem {name} : ffi.KEC {expression} = ⟨{array(digest)}⟩ := by",
-              "  unfold ffi.KEC",
-              "  simp only [keccak256, hashFunction, Function.comp_apply, Absorb.absorb]",
-              f"  rw [{name}_blocks, Absorb.absorbBlock]",
-              f"  change squeeze' 1088 (by decide) 32 (Absorb.absorbBlock 1088 (by decide) (keccakF {array(states[0])}) #[]) = _",
-              "  rw [Absorb.absorbBlock]",
-              f"  change squeeze' 1088 (by decide) 32 (keccakF {array(states[0])}) = _",
+              "attribute [local irreducible] permute", "",
+              f"theorem {name} : Ethereum.KEC {expression} = ⟨{array(digest)}⟩ := by",
+              "  unfold Ethereum.KEC Ethereum.Keccak256.hash",
+              "  conv =>",
+              "    lhs",
+              "    arg 1",
+              "    change permute _",
+              "    arg 1",
+              "    tactic =>",
+              f"      exact (show _ = {vector(states[0])} from by decide +kernel)",
               f"  rw [{name}_permutation]",
-              "  simp only [squeeze', squeeze'.stateToBytes, Function.comp_apply, Absorb.unfoldrN]",
-              "  decide +kernel", "", "end Rollup.EVM.HashCertificates", ""]
+              "  decide +kernel", "", f"end {args.namespace}", ""]
+    if args.alias:
+        lines += [f"theorem {args.alias} : Ethereum.KEC {expression} = ⟨{array(digest)}⟩ :=",
+                  f"  {args.namespace}.{name}", ""]
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text("\n".join(lines))
     print(f"Wrote {args.output}. Compile and audit it before use.")

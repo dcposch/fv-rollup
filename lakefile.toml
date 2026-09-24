@@ -17,5 +17,10 @@ weakLeanArgs = ["-j1"]
 
 [[require]]
 name = "EquiVM"
-git = "https://github.com/argotorg/EquiVM.git"
-rev = "4b9fddcb353c69e740f7adf3eec1d5338d7073e4"
+git = "https://github.com/dcposch/EquiVM.git"
+rev = "3db734e592aae8da5bc103db7eec61def39c27f5"
+
+[[require]]
+name = "evmlean"
+git = "https://github.com/lefterislazar/EVMLean.git"
+rev = "cdbd150780e6f41ebb989eaedc2248bf9ec16861"

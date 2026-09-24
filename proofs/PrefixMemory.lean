@@ -64,7 +64,7 @@ theorem PCR.keccak256 {code : ByteArray} {ee : ExecutionEnv} {target child : Eth
     (hmc : ∀ s : Ethereum.State, s.machineState.activeWords = aw → s.machineState.stack = a :: b :: t →
         memoryExpansionCost s .KECCAK256 = mcost)
     (hval : UInt256.ofNat (fromByteArrayBigEndian
-              (ffi.KEC (mem.readWithPadding a.toNat b.toNat))) = kecval)
+              (Ethereum.KEC (mem.readWithPadding a.toNat b.toNat))) = kecval)
     (hawout : UInt256.ofNat (MachineState.M aw.toNat a.toNat b.toNat) = awout)
     (hov : t.length + 1 ≤ 1024) :
     PCR code ee target child (pc + ⟨1⟩) (kecval :: t) mem awout rdata acc := by

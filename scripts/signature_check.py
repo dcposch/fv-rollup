@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Compare patched ABI formatting with the pinned upstream printer."""
+"""Compare ABI formatting with the original upstream printer."""
 from pathlib import Path
 import subprocess
 import tempfile

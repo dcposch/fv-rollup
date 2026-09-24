@@ -9,10 +9,14 @@ queues, upgrades, emergency exits, and deployment monitoring remain out of scope
 Steps 1–6 are complete. `deployed_contract_correct` proves the final deployment,
 transaction, call-label, and active-payment target. `contract_verification_complete`
 requires the source, constructor, bytecode, and trace results at their exact types.
-The full check passed: seven dependency tests, compiler output, 16 Solidity tests,
+The full check passed: six dependency tests, compiler output, 16 Solidity tests,
 all Lean modules, ABI comparisons, and 1,031 named theorem audits. The audits use
 only the three allowed logical axioms. The trust review is in `invariants/README.md`.
 Older checkpoints below record the prior open obligations.
+
+Dependencies now use clean pinned commits. The EquiVM fork includes
+[PR #9](https://github.com/argotorg/EquiVM/pull/9) and the EVMLean compatibility
+change. Hash certificates use upstream EVMLean Keccak. GitHub CI runs the full check.
 
 ## README review
 

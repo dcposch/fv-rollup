@@ -23,7 +23,7 @@ structure Deployment where
 
 noncomputable def Deployment.address (d : Deployment) (code : ByteArray) : AccountAddress :=
   let nonce := (d.accounts.find? d.sender |>.option ⟨0⟩ (·.nonce)) - ⟨1⟩
-  Fin.ofNat _ (fromByteArrayBigEndian ((ffi.KEC (Lambda.L_A d.sender nonce d.salt code)).extract 12 32))
+  Fin.ofNat _ (fromByteArrayBigEndian ((Ethereum.KEC (Lambda.L_A d.sender nonce d.salt code)).extract 12 32))
 
 def Deployment.fresh (d : Deployment) (code : ByteArray) : Prop :=
   let old := d.accounts.findD (d.address code) default

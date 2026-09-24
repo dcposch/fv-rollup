@@ -1,5 +1,6 @@
 import proofs.RuntimeBytecode
 import proofs.generated.KeccakMappingOne
+import proofs.HashComputation
 open Ethereum Ethereum.EVM Reasoning.Theory
 set_option maxRecDepth 100000
 set_option maxHeartbeats 20000000
@@ -38,7 +39,7 @@ macro "deposit_witness_step " step:term : tactic =>
 
 private theorem witness_hash {bytes : ByteArray}
     (input : bytes = ⟨#[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4]⟩) :
-    ffi.KEC bytes = ⟨#[171, 214, 231, 203, 80, 152, 79, 249, 194, 243, 225, 138, 38, 96, 195, 53, 61, 173, 244, 227, 41, 29, 238, 178, 117, 218, 226, 205, 30, 68, 254, 5]⟩ := by
+    Ethereum.KEC bytes = ⟨#[171, 214, 231, 203, 80, 152, 79, 249, 194, 243, 225, 138, 38, 96, 195, 53, 61, 173, 244, 227, 41, 29, 238, 178, 117, 218, 226, 205, 30, 68, 254, 5]⟩ := by
   rw [input, HashCertificates.deposit_mapping_one]
 
 /-- This deposit run succeeds with one wei. -/
@@ -192,10 +193,10 @@ theorem executes : ∃ final output, X 1000001 (D_J witnessEnv.code 0) witnessSt
   deposit_witness_step (dup2_xstep (code := witnessEnv.code) (pcv := ⟨1136⟩) (a := ⟨64⟩) (b := ⟨0⟩) (t := [⟨1⟩, ⟨226⟩, ⟨4081121793⟩]) rfl rfl (by decide +kernel) (by with_unfolding_all rfl) (by decide +kernel))
   deposit_witness_step (keccak_xstep (code := witnessEnv.code) (pcv := ⟨1137⟩) (a := ⟨0⟩) (b := ⟨64⟩) (t := [⟨0⟩, ⟨1⟩, ⟨226⟩, ⟨4081121793⟩]) rfl rfl (by decide +kernel) (by with_unfolding_all rfl) (by decide +kernel))
   simp only [stKeccak]
-  conv in ffi.KEC _ =>
+  conv in Ethereum.KEC _ =>
     arg 1
     tactic => keccak_cbv
-  conv in ffi.KEC _ =>
+  conv in Ethereum.KEC _ =>
     tactic => exact witness_hash (by decide +kernel)
   deposit_witness_step (dup1_xstep (code := witnessEnv.code) (pcv := ⟨1138⟩) (a := ⟨77725202164364049732730867459915098663759625749236281158857587643401898360325⟩) (t := [⟨0⟩, ⟨1⟩, ⟨226⟩, ⟨4081121793⟩]) rfl rfl (by decide +kernel) (by with_unfolding_all rfl) (by decide +kernel))
   deposit_witness_step (sload_xstep (code := witnessEnv.code) (pcv := ⟨1139⟩) (a := ⟨77725202164364049732730867459915098663759625749236281158857587643401898360325⟩) (t := [⟨77725202164364049732730867459915098663759625749236281158857587643401898360325⟩, ⟨0⟩, ⟨1⟩, ⟨226⟩, ⟨4081121793⟩]) rfl rfl (by decide +kernel) (by with_unfolding_all rfl) (by decide +kernel))

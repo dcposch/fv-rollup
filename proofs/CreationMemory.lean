@@ -18,10 +18,10 @@ theorem creationArgs_size (sequencer root : UInt256) :
 theorem write_from_gap (src mem : ByteArray) (source offset len : Nat)
     (positive : len ≠ 0) (bounds : source + len ≤ src.size) (afterMem : mem.size ≤ offset) :
     src.write source mem offset len =
-      mem ++ ffi.ByteArray.zeroes (offset - mem.size) ++ src.extract source (source + len) := by
-  have padded : (mem.data ++ (ffi.ByteArray.zeroes (offset - mem.size)).data).size = offset := by
-    rw [Array.size_append, show (ffi.ByteArray.zeroes (offset - mem.size)).data.size =
-      (ffi.ByteArray.zeroes (offset - mem.size)).size from rfl, ByteArray_zeroes_size]
+      mem ++ ByteArray.zeroes (offset - mem.size) ++ src.extract source (source + len) := by
+  have padded : (mem.data ++ (ByteArray.zeroes (offset - mem.size)).data).size = offset := by
+    rw [Array.size_append, show (ByteArray.zeroes (offset - mem.size)).data.size =
+      (ByteArray.zeroes (offset - mem.size)).size from rfl, ByteArray_zeroes_size]
     change mem.size + (offset - mem.size) = offset
     omega
   apply ByteArray.ext
@@ -31,10 +31,10 @@ theorem write_from_gap (src mem : ByteArray) (source offset len : Nat)
   have srcSize : src.data.size = src.size := rfl
   rw [show min len (src.size - source) = len from by omega,
     show min mem.size (offset + len) - (offset + len) = 0 from by omega,
-    show (ffi.ByteArray.zeroes 0).data = (#[] : Array UInt8) from by
+    show (ByteArray.zeroes 0).data = (#[] : Array UInt8) from by
       rw [zeroes_zero (n := 0) rfl]; rfl,
     Array.append_empty]
-  have tail : (mem.data ++ (ffi.ByteArray.zeroes (offset - mem.size)).data).extract
+  have tail : (mem.data ++ (ByteArray.zeroes (offset - mem.size)).data).extract
       (offset + len) = #[] := by
     apply Array.extract_eq_empty_of_le
     rw [padded]
@@ -45,7 +45,7 @@ theorem write_from_gap (src mem : ByteArray) (source offset len : Nat)
   simp only [Nat.add_zero]
 
 noncomputable def creationCopiedMem (sequencer root : UInt256) : ByteArray :=
-  (solcFreePtrMem ++ ffi.ByteArray.zeroes 32) ++ creationArgs sequencer root
+  (solcFreePtrMem ++ ByteArray.zeroes 32) ++ creationArgs sequencer root
 
 noncomputable def creationArgMem (sequencer root : UInt256) : ByteArray :=
   (UInt256.toByteArray ⟨192⟩).write 0 (creationCopiedMem sequencer root) 64 32
@@ -77,7 +77,7 @@ theorem creationCopiedMem_read (sequencer root : UInt256) (offset : Nat)
       (creationArgs sequencer root).extract offset (offset + 32) := by
   rw [readWithPadding_eq_extract _ _ (by rw [creationCopiedMem_size]; omega)]
   unfold creationCopiedMem
-  have padded : (solcFreePtrMem ++ ffi.ByteArray.zeroes 32).size = 128 := by
+  have padded : (solcFreePtrMem ++ ByteArray.zeroes 32).size = 128 := by
     rw [ByteArray.size_append, solcFreePtrMem_size, ByteArray_zeroes_size]
   rw [extract_append_right_window _ _ _ _ (by rw [padded]; omega), padded]
   congr 1 <;> omega
